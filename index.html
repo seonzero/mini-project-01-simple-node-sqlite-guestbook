@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>나의 디지털 방명록</title>
+</head>
+<body>
+    <h1>📝 디지털 방명록</h1>
+    
+    <div>
+        <input type="text" id="name" placeholder="이름">
+        <input type="text" id="content" placeholder="내용">
+        <button onclick="writeMessage()">글쓰기</button>
+    </div>
+
+    <hr>
+
+    <div id="guestbook-list"></div>
+
+    <script>
+        // [중요] 서버에서 목록을 가져오는 함수 (GET)
+        async function loadMessages() {
+            const response = await fetch('http://localhost:3000/api/guestbook');
+            const data = await response.json();
+            
+            const listDiv = document.getElementById('guestbook-list');
+            listDiv.innerHTML = data.map(m => `
+                <p>
+                    <strong>${m.name}</strong>: ${m.content} 
+                    <button onclick="deleteMessage(${m.id})">삭제</button>
+                </p>
+            `).join('');
+        }
+
+        // [중요] 서버로 글을 보내는 함수 (POST)
+        async function writeMessage() {
+            const name = document.getElementById('name').value;
+            const content = document.getElementById('content').value;
+
+            await fetch('http://localhost:3000/api/guestbook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, content })
+            });
+
+            alert('저장 완료!');
+            loadMessages(); // 저장 후 목록 새로고침
+        }
+
+        
+        async function deleteMessage(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            // 주소 뒤에 id를 붙여서 보냅니다. 예: /api/guestbook/171023456
+            await fetch(`http://localhost:3000/api/guestbook/${id}`, {
+                method: 'DELETE'
+            });
+
+            alert('삭제되었습니다!');
+            loadMessages(); // 목록 새로고침
+        }
+
+
+        // 페이지가 열리자마자 목록 불러오기
+        loadMessages();
+    </script>
+</body>
+</html>
