@@ -6,8 +6,8 @@ A simple guestbook app to understand Web API communication and SQLite persistenc
 
 > **API 통신과 데이터베이스의 원리를 이해하기 위해 제작한 풀스택 방명록 프로젝트입니다.**
 
-![디지털 방명록](photo\디지털방명록.png)
-![SQLite_db](photo\sqlite_db.png)
+![디지털 방명록](photo/디지털방명록.png)
+![SQLite_db](photo/sqlite_db.png)
 
 
 ---
