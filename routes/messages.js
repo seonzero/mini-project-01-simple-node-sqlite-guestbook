@@ -48,7 +48,7 @@ router.get('/', (req, res) => {
 router.get('/user/:user_id', (req, res) => {
     const {user_id} = req.params;
     db.all(
-        `SELECT messages.id, users.username, message.content, messages.created_at
+        `SELECT messages.id, users.username, messages.content, messages.created_at
         FROM messages
         JOIN users ON messages.user_id = users.id
         WHERE messages.user_id =? AND messages.deleted_at IS NULL
@@ -65,17 +65,17 @@ router.get('/user/:user_id', (req, res) => {
 // 4. 삭제 DELETE / api/messages/:id?hard=true
 router.delete('/:id', (req, res) => {
     const {id} = req.params;
-    const isHard = req.query.hard === 'true; //?hard=true면 하드삭제
+    const isHard = req.query.hard === 'true'; //?hard=true면 하드삭제
 
     if (isHard) {
-        //하드 삭제: 행 자체를 제거함
+        //하드 삭제: 행 자체를 제거함 - DELETE 
         db.run(`DELETE FROM messages WHERE id=?`, [id], function(err) {
             if (err) return res.status(500).json({error: '서버 오류'});
             if (this.changes === 0) return res.status(404).json({error: '존재하지 않는 글입니다.'});
             res.json({message: '하드 삭제 완료'});
         });
     } else{
-        //소프트 삭제: deleted_at에 현재 시간 기록
+        //소프트 삭제: deleted_at에 현재 시간 기록 - UPDATE
         db.run(
             `UPDATE messages SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?`,
             [id],

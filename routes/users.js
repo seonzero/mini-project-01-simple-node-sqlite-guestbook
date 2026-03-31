@@ -10,7 +10,7 @@ router.post('/', (req, res) => {
         return res.status(400).json({error: 'username은 필수입니다.'});
     }
 
-    db.run(
+    db.run( //저장하기
         `INSERT INTO users (username) VALUES (?)`,
         [username], 
         function(err){
@@ -35,7 +35,7 @@ router.get('/:id', (req, res) => {
 
     db.get(
         `SELECT * FROM users WHERE id = ?`,
-        [id]
+        [id],
         (err, row) => {
             if (err) return res.status(500).json({error: '서버 오류'});
             if (!row) return res.status(404).json({error: '존재하지 않는 사용자입니다.'});
