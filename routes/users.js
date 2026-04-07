@@ -29,6 +29,32 @@ router.post('/', (req, res) => {
     );
 });
 
+// 3. username으로 user_id 찾기: 없으면 자동 생성
+// POST /api/users/findOrCreate
+router.post('/findOrCreate', (req, res) => {
+    const { username } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ error: 'username은 필수입니다.' });
+    }
+
+    // 먼저 있는지 찾아보고
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
+        if (err) return res.status(500).json({ error: '서버 오류' });
+
+        if (row) {
+            // 있으면 그대로 반환
+            return res.json({ userId: row.id, username: row.username, isNew: false });
+        }
+
+        // 없으면 새로 만들기
+        db.run(`INSERT INTO users (username) VALUES (?)`, [username], function(err) {
+            if (err) return res.status(500).json({ error: '서버 오류' });
+            res.status(201).json({ userId: this.lastID, username, isNew: true });
+        });
+    });
+});
+
 // 2. 사용자 조회: GET/api/users/:id
 router.get('/:id', (req, res) => {
     const { id } = req.params;
@@ -43,6 +69,8 @@ router.get('/:id', (req, res) => {
         }
     );
 });
+
+
 
 
 module.exports = router;

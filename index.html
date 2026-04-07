@@ -5,9 +5,9 @@
 </head>
 <body>
     <h1>📝 디지털 방명록</h1>
-    
+
     <div>
-        <input type="text" id="name" placeholder="이름">
+        <input type="text" id="username" placeholder="이름">
         <input type="text" id="content" placeholder="내용">
         <button onclick="writeMessage()">글쓰기</button>
     </div>
@@ -17,50 +17,104 @@
     <div id="guestbook-list"></div>
 
     <script>
-        // [중요] 서버에서 목록을 가져오는 함수 (GET)
+        // 1. 글 목록 불러오기 (GET /api/messages)
         async function loadMessages() {
-            const response = await fetch('http://localhost:3000/api/guestbook');
+            const response = await fetch('http://localhost:3000/api/messages');
             const data = await response.json();
-            
+
             const listDiv = document.getElementById('guestbook-list');
             listDiv.innerHTML = data.map(m => `
                 <p>
-                    <strong>${m.name}</strong>: ${m.content} 
-                    <button onclick="deleteMessage(${m.id})">삭제</button>
+                    <strong>${m.username}</strong>: ${m.content}
+                    <button onclick="likeMessage(${m.id})">❤️ 좋아요</button>
+                    <span id="like-count-${m.id}"></span>
+                    <button onclick="deleteMessage(${m.id})">🗑️ 삭제</button>
                 </p>
             `).join('');
+
+            // 각 글의 좋아요 수 불러오기
+            data.forEach(m => loadLikeCount(m.id));
         }
 
-        // [중요] 서버로 글을 보내는 함수 (POST)
+        // 2. 좋아요 수 불러오기 (GET /api/likes/:message_id)
+        async function loadLikeCount(messageId) {
+            const response = await fetch(`http://localhost:3000/api/likes/${messageId}`);
+            const data = await response.json();
+            document.getElementById(`like-count-${messageId}`).innerText = `(${data.like_count})`;
+        }
+
+        // 3. 글쓰기 (POST /api/users/findOrCreate → POST /api/messages)
         async function writeMessage() {
-            const name = document.getElementById('name').value;
+            const username = document.getElementById('username').value;
             const content = document.getElementById('content').value;
 
-            await fetch('http://localhost:3000/api/guestbook', {
+            if (!username || !content) {
+                alert('이름과 내용을 입력해주세요!');
+                return;
+            }
+
+            // 먼저 user_id 확보
+            const userRes = await fetch('http://localhost:3000/api/users/findOrCreate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, content })
+                body: JSON.stringify({ username })
+            });
+            const userData = await userRes.json();
+
+            // 글 작성
+            await fetch('http://localhost:3000/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userData.userId, content })
             });
 
             alert('저장 완료!');
-            loadMessages(); // 저장 후 목록 새로고침
+            loadMessages();
         }
 
-        
+        // 4. 좋아요 (POST /api/likes)
+        async function likeMessage(messageId) {
+            const username = document.getElementById('username').value;
+
+            if (!username) {
+                alert('좋아요를 누르려면 이름을 입력해주세요!');
+                return;
+            }
+
+            // user_id 확보
+            const userRes = await fetch('http://localhost:3000/api/users/findOrCreate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            });
+            const userData = await userRes.json();
+
+            const res = await fetch('http://localhost:3000/api/likes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userData.userId, message_id: messageId })
+            });
+
+            if (res.status === 409) {
+                alert('이미 좋아요를 눌렀어요!');
+            } else {
+                loadLikeCount(messageId);
+            }
+        }
+
+        // 5. 소프트 삭제 (DELETE /api/messages/:id)
         async function deleteMessage(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
 
-            // 주소 뒤에 id를 붙여서 보냅니다. 예: /api/guestbook/171023456
-            await fetch(`http://localhost:3000/api/guestbook/${id}`, {
+            await fetch(`http://localhost:3000/api/messages/${id}`, {
                 method: 'DELETE'
             });
 
             alert('삭제되었습니다!');
-            loadMessages(); // 목록 새로고침
+            loadMessages();
         }
 
-
-        // 페이지가 열리자마자 목록 불러오기
+        // 페이지 열리자마자 목록 불러오기
         loadMessages();
     </script>
 </body>

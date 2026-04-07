@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = 3000;
 
+
 // 미들웨어
 app.use(cors());
 app.use(express.json());
@@ -19,9 +20,11 @@ app.use('/api/users',    usersRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/likes',    likesRouter);
 
-// 홈
+// 홈에서 HTML 파일을 보여주고 싶다면?
+const path = require('path');
 app.get('/', (req, res) => {
-    res.send('<h1>방명록 서버 가동 중!</h1>');
+    // res.send 대신 파일을 보내주면 화면이 바로 떠요!
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(port, () => {
